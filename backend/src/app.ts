@@ -1,0 +1,31 @@
+import 'dotenv/config';
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+import { z } from 'zod';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import { auth } from './middleware/auth.js';
+import * as store from './database/store.js';
+export const app=express();
+app.disable('x-powered-by');
+app.set('trust proxy', Number(process.env.TRUST_PROXY||0));
+const origins=(process.env.CORS_ORIGIN||'http://localhost:5173').split(',').map(x=>x.trim());
+app.use(helmet());app.use(cors({origin:(origin,cb)=>cb(null,!origin||origins.includes(origin))}));app.use(express.json({limit:'20kb'}));
+app.use('/api',rateLimit({windowMs:60000,limit:120,standardHeaders:'draft-7',legacyHeaders:false,message:{message:'Muitas requisições. Tente novamente em um minuto.'}}));
+const text=(min=1,max=200)=>z.string().trim().min(min).max(max).refine(s=>!/[<>\x00-\x08]/.test(s),'Não use marcação HTML.');
+const url=z.union([z.literal(''),z.string().url().max(2000).refine(v=>v.startsWith('https://'),'Use HTTPS.')]);
+const eventSchema=z.object({name:text(),sport:text(),description:text(10,5000),date:z.string().datetime({offset:true}),location:text(),city:text(),state:z.string().regex(/^[A-Z]{2}$/),category:text(),image_url:url.default(''),registration_url:url.default(''),is_demo:z.boolean().default(true)}).strict();
+const storySchema=z.object({name:text(),sport:text(),title:text(),description:text(10,5000),image_url:url.default(''),is_demo:z.boolean().default(true)}).strict();
+const participationSchema=z.object({name:text(2,120),email:z.string().trim().email().max(254),type:z.enum(['Estudante/atleta','Escola','Equipe','Apoio']),city:text(2,120),message:text(10,2000)}).strict();
+app.get('/api/health',async(_req,res)=>{if(store.pool)await store.pool.query('SELECT 1');res.json({status:'ok',mode:store.useDatabase?'postgres':'demo',persistence:store.useDatabase});});
+app.get('/api/events',async(req,res)=>{const items=await store.list('events');const filter=z.object({sport:z.string().optional(),city:z.string().optional(),state:z.string().optional(),date:z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),category:z.string().optional()}).parse(req.query);res.json(items.filter(x=>Object.entries(filter).every(([k,v])=>!v||(k==='date'?new Date(x.date).toISOString().slice(0,10)>=v:String(x[k]).toLocaleLowerCase('pt-BR')===v.toLocaleLowerCase('pt-BR')))).sort((a,b)=>new Date(a.date).getTime()-new Date(b.date).getTime()));});
+for(const [path,table] of [['events','events'],['sports','sports'],['stories','athlete_stories']] as const){if(path!=='events')app.get('/api/'+path,async(_req,res)=>res.json(await store.list(table)));app.get('/api/'+path+'/:id',async(req,res)=>{const item=await store.find(table,z.string().parse(req.params.id));if(!item)return void res.status(404).json({message:'Conteúdo não encontrado.'});res.json(item);});}
+const sensitive=rateLimit({windowMs:15*60000,limit:10,standardHeaders:'draft-7',legacyHeaders:false,message:{message:'Muitas tentativas. Aguarde alguns minutos.'}});
+app.post('/api/participation',sensitive,async(req,res)=>{const data=participationSchema.parse(req.body);const item=await store.create('participation_requests',data);res.status(201).json({id:item.id,message:store.useDatabase?'Solicitação registrada neste protótipo escolar. Não há contato real previsto.':'Envio simulado. Os dados ficam apenas na memória do servidor até ele reiniciar.',simulated:!store.useDatabase});});
+app.post('/api/admin/login',sensitive,async(req,res)=>{const data=z.object({email:z.string().email(),password:z.string().min(1).max(200)}).parse(req.body);const secret=process.env.JWT_SECRET;const hash=process.env.ADMIN_PASSWORD_HASH;if(!secret||secret.length<32||!hash||!process.env.ADMIN_EMAIL)return void res.status(503).json({message:'Administração ainda não configurada.'});const valid=await bcrypt.compare(data.password,hash);if(!valid||data.email!==process.env.ADMIN_EMAIL)return void res.status(401).json({message:'Credenciais inválidas.'});res.json({token:jwt.sign({role:'admin'},secret,{expiresIn:'1h',issuer:'heraia',audience:'heraia-admin',subject:data.email})});});
+app.get('/api/admin/participation',auth,async(_req,res)=>res.json(await store.list('participation_requests')));
+for(const [path,table,schema] of [['events','events',eventSchema],['stories','athlete_stories',storySchema]] as const){app.post('/api/'+path,auth,async(req,res)=>res.status(201).json(await store.create(table,schema.parse(req.body))));app.put('/api/'+path+'/:id',auth,async(req,res)=>{const item=await store.update(table,z.string().parse(req.params.id),schema.parse(req.body));if(!item)return void res.status(404).json({message:'Conteúdo não encontrado.'});res.json(item);});app.delete('/api/'+path+'/:id',auth,async(req,res)=>{if(!await store.remove(table,z.string().parse(req.params.id)))return void res.status(404).json({message:'Conteúdo não encontrado.'});res.sendStatus(204);});}
+app.use((_req,res)=>res.status(404).json({message:'Rota não encontrada.'}));
+app.use((err:any,_req:express.Request,res:express.Response,_next:express.NextFunction)=>{if(err instanceof z.ZodError)return void res.status(400).json({message:'Confira os campos preenchidos.',fields:err.flatten().fieldErrors});if(err.type==='entity.parse.failed')return void res.status(400).json({message:'JSON inválido.'});if(err.type==='entity.too.large')return void res.status(413).json({message:'Conteúdo muito grande.'});console.error('Request failed',err.name);res.status(500).json({message:'Não foi possível concluir a solicitação.'});});
