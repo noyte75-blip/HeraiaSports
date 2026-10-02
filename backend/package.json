@@ -8,10 +8,11 @@
     "build": "tsc",
     "check": "tsc --noEmit",
     "start": "node dist/server.js",
-    "db:migrate": "tsx src/database/migrate.ts",
-    "db:seed": "tsx src/database/seed.ts",
+    "db:migrate": "node --import tsx src/database/migrate.ts",
+    "db:seed": "node --import tsx src/database/seed.ts",
     "test": "node --import tsx --test src/api.test.ts",
-    "hash-password": "node scripts/hash-password.mjs"
+    "hash-password": "node scripts/hash-password.mjs",
+    "db:setup": "node dist/database/migrate.js && node dist/database/seed.js"
   },
   "dependencies": {
     "express": "^5.1.0",

@@ -4,7 +4,7 @@
 
 O Heraia propõe incentivar a participação de meninas e mulheres no esporte por meio de educação desde a infância, divulgação de oportunidades e valorização de atletas e equipes. O nome se inspira nos Jogos Heraicos da Grécia Antiga.
 
-Todos os eventos, locais e personagens incluídos são fictícios e identificados na interface. Não há parceiros, patrocínios, inscrições reais ou resultados anunciados. Para testar o formulário, use informações fictícias.
+Os eventos e seus locais são fictícios e identificados na interface. As histórias apresentam atletas reais — Rebeca Andrade, Marta, Rafaela Silva e Tifanny Abreu — com referências oficiais visíveis; não há vínculo anunciado dessas atletas com o Heraia. Não há parceiros, patrocínios, inscrições reais ou resultados anunciados. Para testar o formulário, use informações fictícias.
 
 ## O que está implementado
 
@@ -123,9 +123,9 @@ npm run db:migrate --workspace backend
 npm run db:seed --workspace backend
 ```
 
-O esquema cria `sports`, `events`, `athlete_stories` e `participation_requests`. A tabela de eventos acrescenta `state` e `is_demo` para os filtros e a identificação de ficção. O seed é repetível: não sobrescreve registros com IDs já existentes. A migração inicial é repetível, mas não constitui um sistema de migrações versionadas para alterações futuras.
+O esquema cria `sports`, `events`, `athlete_stories` e `participation_requests`. A tabela de eventos acrescenta `state` e `is_demo` para os filtros e a identificação de ficção. O seed é repetível: preserva eventos e modalidades com IDs existentes e substitui apenas os três perfis fictícios originais. Perfis reais ou alterados são preservados. A migração inicial é repetível, mas não constitui um sistema de migrações versionadas para alterações futuras.
 
-Os campos `image_url` estão preparados no banco; a interface atual usa composição tipográfica e iniciais das personagens, sem fotografias ou imagens externas. Os eventos demonstrativos não têm links de inscrição.
+Os campos `image_url` estão preparados no banco; a interface atual usa composição tipográfica e iniciais das atletas, sem fotografias ou imagens externas. Os eventos demonstrativos não têm links de inscrição.
 
 ## API REST
 
@@ -136,7 +136,7 @@ Os campos `image_url` estão preparados no banco; a interface atual usa composi�
 | `GET /api/events/:id` | Público | Detalhes do evento. |
 | `GET /api/sports` | Público | Modalidades. |
 | `GET /api/sports/:id` | Público | Detalhes de modalidade. |
-| `GET /api/stories` | Público | Histórias fictícias. |
+| `GET /api/stories` | Público | Histórias reais com fontes. |
 | `GET /api/stories/:id` | Público | Detalhes de história. |
 | `POST /api/participation` | Público, com rate limit | Recebe nome, e-mail, tipo, cidade e mensagem. |
 | `POST /api/admin/login` | Público, com rate limit | Valida e-mail/senha e retorna JWT. |
@@ -158,7 +158,7 @@ Respostas: 200 sucesso, 201 criação, 204 remoção, 400 validação/JSON invá
 
 1. Crie seu repositório e envie o conteúdo de `heraia`, incluindo `package-lock.json`, mas nunca `.env` ou `node_modules`.
 2. Importe o repositório na Netlify.
-3. Configure a pasta base `frontend`, comando `npm run build`, diretório de publicação `dist` e Node.js 22.
+3. Configure a pasta base na raiz (vazia), package directory `frontend`, comando `npm run build --workspace frontend`, diretório de publicação `frontend/dist` e Node.js 22.
 4. Configure `VITE_API_URL=https://SEU-BACKEND.onrender.com/api`.
 5. O arquivo `frontend/netlify.toml` configura o fallback de rotas para `index.html`, necessário para abrir links de detalhes diretamente.
 6. Faça o build e verifique páginas, filtros e formulário após conectar a API.
@@ -166,13 +166,13 @@ Respostas: 200 sucesso, 201 criação, 204 remoção, 400 validação/JSON invá
 ## Preparação para Render
 
 1. Crie o PostgreSQL e um serviço web Node.js conectado ao repositório.
-2. Configure a pasta raiz `backend`, build `npm ci --include=dev && npm run build`, início `npm start` e Node.js 22.
+2. Deixe a pasta raiz vazia, use build `npm ci --include=dev && npm run build --workspace backend && npm run db:setup --workspace backend`, início `npm run start --workspace backend` e Node.js 22.
 3. Configure `NODE_ENV=production`, `DATA_MODE=postgres`, `DATABASE_URL` e as demais variáveis pertinentes. O Render fornece a porta pelo ambiente.
 4. Configure `CORS_ORIGIN` com a origem HTTPS exata do frontend, e `TRUST_PROXY` de acordo com o proxy confiável da implantação.
 5. Execute `npm run db:migrate` e `npm run db:seed` no contexto do backend **antes** de disponibilizar os dados. Pode usar uma etapa de pré-deploy se seu plano suportar, ou executar localmente com a conexão autorizada ao banco.
 6. Configure `/api/health` para verificar a saúde do serviço e teste a integração pelo frontend.
 
-O monorepo mantém um lockfile na raiz. Se a hospedagem não localizar o lockfile ao usar uma subpasta, use a raiz do repositório para instalação: build backend `npm ci --include=dev && npm run build --workspace backend` e início `npm run start --workspace backend`; frontend `npm ci --include=dev && npm run build --workspace frontend`, publicação `frontend/dist`. Nesse caso, copie a regra de fallback do `frontend/netlify.toml` para a configuração raiz da Netlify.
+O monorepo mantém um lockfile na raiz. Os comandos acima instalam e compilam a partir dela.
 
 ## Estrutura
 
@@ -209,3 +209,23 @@ heraia/
 ```
 
 A estrutura foi compactada para facilitar o uso escolar. Separar controllers, páginas e serviços adicionais é uma evolução possível conforme o projeto crescer.
+
+
+## Atualização de implantação — versão 2
+
+1. Substitua os arquivos do repositório pelos deste pacote, preservando suas variáveis de ambiente no Render e na Netlify.
+2. No Render, use a raiz do repositório (Root Directory vazio).
+3. Build Command: `npm ci --include=dev && npm run build --workspace backend && npm run db:setup --workspace backend`
+4. Start Command: `npm run start --workspace backend`
+5. O comando db:setup usa o código compilado para criar as tabelas e importar o conteúdo. Não depende do terminal pago do Render. Caso uma migração falhe, o build falha; não há fallback silencioso.
+6. Depois do deploy, abra `/api/events` e `/api/stories` na URL do backend. Ambos devem retornar listas JSON.
+7. Na Netlify: base na raiz, package directory `frontend`, comando `npm run build --workspace frontend`, publicação `frontend/dist`. O netlify.toml incluído já usa esses valores.
+8. `VITE_API_URL=https://heraiasports.onrender.com/api`; faça novo deploy do frontend para incorporar a variável.
+9. `CORS_ORIGIN` no Render deve conter a origem exata da Netlify (por exemplo, `https://nome.netlify.app`), sem barra final. Salve e faça redeploy quando mudar.
+
+Fontes das histórias: biografia de Rebeca Andrade no COB; entrevista de Marta publicada pela FIFA em 17/01/2024; entrevista de Rafaela Silva publicada pela IJF em 27/08/2023. Consultadas em 02/10/2026. Textos escritos como sínteses; sem falas inventadas. As conquistas são datadas, não promessas de atualização automática.
+
+
+## Versão 3 — quatro atletas reais
+
+Inclui Tifanny Abreu, jogadora de vôlei e mulher trans, com trajetória apresentada a partir de reportagem da CBV sobre a final da Copa Brasil de 28/02/2026. A referência é exibida na página. Substitua os arquivos no mesmo repositório e mantenha os comandos de implantação da versão 2. O db:setup acrescenta o quarto perfil sem remover os anteriores. Eventos continuam fictícios.
