@@ -1,6 +1,6 @@
-# Atualização V6: robô com navegador e aviso
+# Atualização V7: robô com navegador e aviso
 
-Leia [AGENDA-AUTOMATICA.md](AGENDA-AUTOMATICA.md) para ativar o robô com navegador Ticket Sports, configurar o Render e o agendamento diário no GitHub. Os passos específicos da V6 substituem as limitações de agenda exclusivamente manual descritas na versão anterior abaixo.
+Leia [AGENDA-AUTOMATICA.md](AGENDA-AUTOMATICA.md) para ativar o robô com navegador Ticket Sports, configurar o Render e o agendamento diário no GitHub. Os passos específicos da V7 substituem as limitações de agenda exclusivamente manual descritas na versão anterior abaixo.
 
 # Heraia
 

@@ -15,12 +15,12 @@ export async function collect(){let browser;
  try{browser=await chromium.launch();const page=await browser.newPage({locale:'pt-BR'});const candidates=new Map();
  for(const keyword of keywords){const html=await load(page,'https://produto.ticketsports.com.br/Calendario/?termo='+encodeURIComponent(keyword),'.card-evento');for(const event of parseCatalog(html))candidates.set(event.id,event);}
  const events=[];
- for(const event of [...candidates.values()].slice(0,20)){const id=event.id.replace('ticketsports-','');const html=await load(page,event.source_url,'h1[data-id-event]');if(validDetail(html,id))events.push(event);}
+ for(const event of [...candidates.values()].slice(0,20)){const id=event.id.replace('ticketsports-','');const html=await load(page,event.source_url,'h1[data-id-event]');if(validDetail(html,id)&&new Date(event.date).getTime()>Date.now())events.push({...event,registration_checked_at:new Date().toISOString()});}
  return {status:'ok',events,message:''};
  }catch(error){return {status:'error',events:[],message:error instanceof Error?error.message.slice(0,300):'Falha no robô'};}finally{await browser?.close();}
 }
 export async function report(payload){const token=process.env.EVENT_SYNC_TOKEN||'';if(token.length<32)throw new Error('Configure EVENT_SYNC_TOKEN nos secrets do GitHub');const url=(process.env.HERAIA_API_URL||'https://heraiasports.onrender.com/api')+'/integrations/ticketsports/report';
- for(let attempt=0;attempt<3;attempt++){try{const response=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},body:JSON.stringify(payload),signal:AbortSignal.timeout(90000)});if(!response.ok)throw new Error(`Backend respondeu HTTP ${response.status}`);return await response.json();}catch(error){if(attempt===2)throw error;}}
+ for(let attempt=0;attempt<3;attempt++){try{const response=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},body:JSON.stringify(payload),signal:AbortSignal.timeout(90000)});if(!response.ok){const detail=await response.json().catch(()=>({message:'Resposta sem detalhes'}));throw new Error(`Backend respondeu HTTP ${response.status}: ${JSON.stringify({message:detail.message,fields:detail.fields})}`);}return await response.json();}catch(error){if(attempt===2)throw error;}}
 }
 async function main(){const dry=process.argv.includes('--dry-run');let payload;if(process.argv.includes('--report-install-failure'))payload={status:'error',events:[],message:'Não foi possível instalar ou iniciar o navegador do robô'};else payload=await collect();
  await mkdir('robot-result',{recursive:true});await writeFile('robot-result/status.json',JSON.stringify(payload,null,2));

@@ -8,6 +8,7 @@ test('catalog selects women-focused mixed events, decodes names, checks opening,
  const events=parseCatalog(card('Corrida Mulher')+card('Corrida Mulher')+card('Corrida Masculina','aberto','124')+card('Ladies Run','fechado','125'),new Date('2030-01-01'));
  assert.equal(events.length,1);assert.equal(events[0].city,'São Paulo');assert.equal(events[0].id,'ticketsports-123');assert.equal(events[0].start_time_confirmed,false);
  assert.equal(parseCatalog(card('Diva Run'),new Date('2031-01-01')).length,0);
+ assert.equal(parseCatalog(card('Diva Run'),new Date('2030-10-11T03:01:00Z')).length,0);
 });
 test('registration requires event identity and active CTA, rejects preview and closed pages',()=>{
  const page='<h1 data-id-event="123">Ladies Run</h1><a id="bot_inscrever">Inscrever</a>';

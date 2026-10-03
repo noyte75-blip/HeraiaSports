@@ -14,6 +14,8 @@ test('browser reports require authorization; failed runs preserve prior events a
  const failure=await post({status:'error',message:'Página pública bloqueou o robô'});assert.equal(failure.status,200);
  const status=await (await fetch(base+'/status')).json();assert.equal(status.message,'Dados não atualizados');assert.equal(status.last_success_at,report.last_success_at);assert.equal((await store.find('events',event.id)).registration_checked_at,checked);
  assert.equal((await post({status:'ok',events:[{...event,source_url:'https://example.com'}]})).status,400);assert.equal((await store.find('events',event.id)).registration_checked_at,checked);
+ const expired={...event,id:'ticketsports-987655',date:new Date(Date.now()-86400000).toISOString(),source_url:'https://www.ticketsports.com.br/Evento/987655/Cadastro',registration_url:'https://www.ticketsports.com.br/Evento/987655/Cadastro'};
+ const mixed=await post({status:'ok',events:[event,expired]});assert.equal(mixed.status,200);assert.equal((await mixed.json()).upserted,1);assert.equal(await store.find('events',expired.id),undefined);
  assert.equal((await post({status:'ok',events:[event]})).status,200);assert.equal((await store.list('events')).filter(x=>x.id===event.id).length,1);
  assert.equal((await (await fetch(base+'/status')).json()).status,'ok');
  }finally{await new Promise<void>((resolve,reject)=>server.close(error=>error?reject(error):resolve()));delete process.env.EVENT_SYNC_TOKEN;}

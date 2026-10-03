@@ -27,8 +27,8 @@ app.post('/api/integrations/ticketsports/report',async(req,res)=>{
  if(!authorized((req.headers.authorization||'').replace(/^Bearer /,'')))return void res.status(401).json({message:'Acesso não autorizado.'});
  const report=z.object({status:z.enum(['ok','error']),events:z.array(z.record(z.unknown())).max(20).default([]),message:z.string().max(300).default('')}).strict().parse(req.body);
  const events=report.status==='ok'?report.events.map(item=>{const {id,...fields}=item;const event=eventSchema.parse(fields);const source=`https://www.ticketsports.com.br/Evento/${String(id).replace('ticketsports-','')}/Cadastro`;
- if(typeof id!=='string'||!/^ticketsports-\d+$/.test(id)||event.is_demo||event.registration_status!=='open'||event.source_url!==source||event.registration_url!==source||!matchesWomen(event.name)||new Date(event.date).getTime()<=Date.now())throw new z.ZodError([{code:'custom',path:['events'],message:'Evento inválido para esta integração.'}]);
- return {...event,id,registration_checked_at:new Date().toISOString()};}):[];
+ if(typeof id!=='string'||!/^ticketsports-\d+$/.test(id)||event.is_demo||event.registration_status!=='open'||event.source_url!==source||event.registration_url!==source||!matchesWomen(event.name))throw new z.ZodError([{code:'custom',path:['events'],message:'Evento inválido para esta integração.'}]);
+ return {...event,id,registration_checked_at:new Date().toISOString()};}).filter(event=>new Date(event.date).getTime()>Date.now()):[];
  res.json(await store.saveBrowserReport(report.status,events,report.message));
 });
 app.get('/api/integrations/ticketsports/status',async(_req,res)=>res.json(await store.readBrowserStatus()));
