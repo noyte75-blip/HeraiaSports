@@ -1,4 +1,4 @@
-import {authorized,syncTicketSports,syncStatus} from './ticketsports.js';
+import {authorized,matchesWomen} from './ticketsports.js';
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
@@ -14,6 +14,7 @@ export const app=express();
 app.disable('x-powered-by');
 app.set('trust proxy', Number(process.env.TRUST_PROXY||0));
 const origins=(process.env.CORS_ORIGIN||'http://localhost:5173').split(',').map(x=>x.trim());
+app.use('/api/integrations/ticketsports/report',express.json({limit:'100kb'}));
 app.use(helmet());app.use(cors({origin:(origin,cb)=>cb(null,!origin||origins.includes(origin))}));app.use(express.json({limit:'20kb'}));
 app.use('/api',rateLimit({windowMs:60000,limit:120,standardHeaders:'draft-7',legacyHeaders:false,message:{message:'Muitas requisições. Tente novamente em um minuto.'}}));
 const text=(min=1,max=200)=>z.string().trim().min(min).max(max).refine(s=>!/[<>\x00-\x08]/.test(s),'Não use marcação HTML.');
@@ -21,8 +22,16 @@ const url=z.union([z.literal(''),z.string().url().max(2000).refine(v=>v.startsWi
 const eventSchema=z.object({name:text(),sport:text(),description:text(10,5000),date:z.string().datetime({offset:true}),location:text(),city:text(),state:z.string().regex(/^[A-Z]{2}$/),category:text(),image_url:url.default(''),registration_url:url.default(''),is_demo:z.boolean().default(true),organizer:text().or(z.literal('')).default(''),source_name:text().or(z.literal('')).default(''),source_url:url.default(''),participation_note:text(0,1000).default(''),start_time_confirmed:z.boolean().default(true),registration_status:z.enum(['open','closed','unverified']).default('unverified'),registration_checked_at:z.string().datetime({offset:true}).nullable().default(null),registration_deadline:z.string().datetime({offset:true}).nullable().default(null)}).strict().superRefine((value,ctx)=>{if(!value.is_demo&&value.registration_status==='open'&&(!value.source_url||!value.registration_url||!value.registration_checked_at))ctx.addIssue({code:z.ZodIssueCode.custom,message:'Inscrição aberta precisa de fonte, link e data de conferência.',path:['registration_checked_at']});});
 const storySchema=z.object({name:text(),sport:text(),title:text(),description:text(10,5000),image_url:url.default(''),is_demo:z.boolean().default(true),source_name:text().or(z.literal('')).default(''),source_url:url.default(''),source_checked_at:z.string().regex(/^\d{4}-\d{2}-\d{2}$/).or(z.literal('')).default('')}).strict().superRefine((value,ctx)=>{if(!value.is_demo&&(!value.source_name||!value.source_url))ctx.addIssue({code:z.ZodIssueCode.custom,message:'Histórias reais precisam de fonte.',path:['source_url']});});
 const participationSchema=z.object({name:text(2,120),email:z.string().trim().email().max(254),type:z.enum(['Estudante/atleta','Escola','Equipe','Apoio']),city:text(2,120),message:text(10,2000)}).strict();
-app.post('/api/integrations/ticketsports/sync',async(req,res)=>{if(!authorized((req.headers.authorization||'').replace(/^Bearer /,'')))return void res.status(401).json({message:'Acesso não autorizado.'});res.json(await syncTicketSports());});
-app.get('/api/integrations/ticketsports/status',(_req,res)=>res.json(syncStatus()));
+app.post('/api/integrations/ticketsports/sync',(_req,res)=>res.status(409).json({message:'Execute o workflow atualizado do robô com navegador no GitHub.'}));
+app.post('/api/integrations/ticketsports/report',async(req,res)=>{
+ if(!authorized((req.headers.authorization||'').replace(/^Bearer /,'')))return void res.status(401).json({message:'Acesso não autorizado.'});
+ const report=z.object({status:z.enum(['ok','error']),events:z.array(z.record(z.unknown())).max(20).default([]),message:z.string().max(300).default('')}).strict().parse(req.body);
+ const events=report.status==='ok'?report.events.map(item=>{const {id,...fields}=item;const event=eventSchema.parse(fields);const source=`https://www.ticketsports.com.br/Evento/${String(id).replace('ticketsports-','')}/Cadastro`;
+ if(typeof id!=='string'||!/^ticketsports-\d+$/.test(id)||event.is_demo||event.registration_status!=='open'||event.source_url!==source||event.registration_url!==source||!matchesWomen(event.name)||new Date(event.date).getTime()<=Date.now())throw new z.ZodError([{code:'custom',path:['events'],message:'Evento inválido para esta integração.'}]);
+ return {...event,id,registration_checked_at:new Date().toISOString()};}):[];
+ res.json(await store.saveBrowserReport(report.status,events,report.message));
+});
+app.get('/api/integrations/ticketsports/status',async(_req,res)=>res.json(await store.readBrowserStatus()));
 app.get('/api/health',async(_req,res)=>{if(store.pool)await store.pool.query('SELECT 1');res.json({status:'ok',mode:store.useDatabase?'postgres':'demo',persistence:store.useDatabase});});
 app.get('/api/events',async(req,res)=>{const items=await store.list('events');const filter=z.object({sport:z.string().optional(),city:z.string().optional(),state:z.string().optional(),date:z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),category:z.string().optional()}).parse(req.query);res.json(items.map(x=>({...x,availability:eventAvailability(x)})).filter(x=>x.availability==='open_checked').filter(x=>Object.entries(filter).every(([k,v])=>!v||(k==='date'?new Date(x.date).toISOString().slice(0,10)>=v:String(x[k]).toLocaleLowerCase('pt-BR')===v.toLocaleLowerCase('pt-BR')))).sort((a,b)=>new Date(a.date).getTime()-new Date(b.date).getTime()));});
 for(const [path,table] of [['events','events'],['sports','sports'],['stories','athlete_stories']] as const){if(path!=='events')app.get('/api/'+path,async(_req,res)=>res.json(await store.list(table)));app.get('/api/'+path+'/:id',async(req,res)=>{const item=await store.find(table,z.string().parse(req.params.id));if(!item)return void res.status(404).json({message:'Conteúdo não encontrado.'});res.json(path==='events'?{...item,availability:eventAvailability(item)}:item);});}

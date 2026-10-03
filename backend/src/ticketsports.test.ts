@@ -14,8 +14,3 @@ test('registration requires event identity and active CTA, rejects preview and c
  assert.ok(validDetail(page,'123'));assert.equal(validDetail(page,'124'),false);assert.equal(validDetail(page+' PREVIEW (TESTE)','123'),false);assert.equal(validDetail(page+' Inscrições encerradas','123'),false);
  process.env.EVENT_SYNC_TOKEN='x'.repeat(64);assert.ok(authorized('x'.repeat(64)));assert.equal(authorized('y'.repeat(64)),false);assert.equal(authorized(''),false);delete process.env.EVENT_SYNC_TOKEN;
 });
-test('sync imports stable IDs and preserves checks on upstream failure',async()=>{
- const {syncTicketSports}=await import('./ticketsports.js');const store=await import('./database/store.js');const original=globalThis.fetch;
- globalThis.fetch=async(input:any)=>new Response(String(input).includes('/Calendario/')?card('Corrida Mulher','aberto','987654'):'<h1 data-id-event="987654">Corrida Mulher</h1><a id="bot_inscrever">Inscrever</a>');
- try{const a=await syncTicketSports();assert.equal(a.upserted,1);await syncTicketSports();const saved=(await store.list('events')).filter(x=>x.id==='ticketsports-987654');assert.equal(saved.length,1);const time=saved[0].registration_checked_at;globalThis.fetch=async()=>new Response('Bloqueado',{status:403});await assert.rejects(syncTicketSports());assert.equal((await store.find('events','ticketsports-987654')).registration_checked_at,time);}finally{globalThis.fetch=original;await store.remove('events','ticketsports-987654');}
-});

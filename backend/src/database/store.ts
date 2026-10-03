@@ -15,3 +15,12 @@ export async function update(name:string,id:string,data:Record<string,unknown>) 
 export async function remove(name:string,id:string) {name=table(name);if(pool)return (await pool.query(`DELETE FROM ${name} WHERE id=$1`,[id])).rowCount!==0;const i=memory[name].findIndex(x=>x.id===id);if(i<0)return false;memory[name].splice(i,1);return true;}
 // IDs supplied only by the trusted event importer, never by public requests.
 export async function importEvent(item:Record<string,unknown>){if(pool){const keys=Object.keys(item);await pool.query(`INSERT INTO events (${keys.join(',')}) VALUES (${keys.map((_,i)=>'$'+(i+1)).join(',')}) ON CONFLICT (id) DO NOTHING`,Object.values(item));}else if(!memory.events.some(x=>x.id===item.id))memory.events.push({...item,created_at:new Date().toISOString()});}
+let browserStatus:any={status:'never',checked_at:null,last_success_at:null};
+export async function readBrowserStatus(){if(pool)return (await pool.query("SELECT payload FROM integration_status WHERE id='ticketsports-browser'")).rows[0]?.payload||browserStatus;return browserStatus;}
+export async function saveBrowserReport(status:'ok'|'error',items:Record<string,unknown>[],message=''){
+ const previous=await readBrowserStatus();const timestamp=new Date().toISOString();
+ const report={status,checked_at:timestamp,last_success_at:status==='ok'?timestamp:previous.last_success_at||null,upserted:status==='ok'?items.length:0,message:status==='error'?'Dados não atualizados':'',reason:message,method:'browser'};
+ if(pool){const client=await pool.connect();try{await client.query('BEGIN');if(status==='ok')for(const item of items){const keys=Object.keys(item);await client.query(`INSERT INTO events (${keys.join(',')}) VALUES (${keys.map((_,i)=>'$'+(i+1)).join(',')}) ON CONFLICT (id) DO UPDATE SET ${keys.filter(k=>k!=='id').map(k=>`${k}=EXCLUDED.${k}`).join(',')}`,Object.values(item));}await client.query("INSERT INTO integration_status (id,payload) VALUES ('ticketsports-browser',$1) ON CONFLICT (id) DO UPDATE SET payload=EXCLUDED.payload",[JSON.stringify(report)]);await client.query('COMMIT');}catch(e){await client.query('ROLLBACK');throw e;}finally{client.release();}}
+ else{if(status==='ok')for(const item of items){const existing=memory.events.find(x=>x.id===item.id);if(existing)Object.assign(existing,item);else memory.events.push({...item,created_at:timestamp});}browserStatus=report;}
+ return report;
+}

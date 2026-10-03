@@ -15,3 +15,5 @@ ALTER TABLE events ADD COLUMN IF NOT EXISTS start_time_confirmed boolean NOT NUL
 ALTER TABLE events ADD COLUMN IF NOT EXISTS registration_status text NOT NULL DEFAULT 'unverified';
 ALTER TABLE events ADD COLUMN IF NOT EXISTS registration_checked_at timestamptz;
 ALTER TABLE events ADD COLUMN IF NOT EXISTS registration_deadline timestamptz;
+
+CREATE TABLE IF NOT EXISTS integration_status (id text PRIMARY KEY, payload jsonb NOT NULL);

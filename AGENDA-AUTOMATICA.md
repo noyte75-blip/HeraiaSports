@@ -1,31 +1,30 @@
-# Agenda automática da Heraia — versão 5
+# Versão 6 — robô com navegador e aviso de atualização
 
-O backend busca o catálogo público da Ticket Sports por Ladies, Meninas, Rosa, Mulher, Diva, Feminina, Women e Pink. Aceita eventos mistos cujo nome contenha essas palavras. Não afirma que são exclusivos para mulheres. Confere data futura, status de inscrições abertas, identidade do evento e botão de inscrição na página oficial. Descarta páginas de teste e encerradas. Até 20 candidatos são conferidos por execução; a busca pode não cobrir todos os eventos porque os resultados são paginados.
+O robô usa Playwright/Chromium no GitHub Actions para abrir as páginas públicas, esperar o catálogo carregar e selecionar eventos por Ladies, Meninas, Rosa, Mulher, Diva, Feminina, Women e Pink. Aceita eventos mistos, sem anunciá-los como exclusivos para mulheres. Confere inscrições abertas e o botão de inscrição antes de enviar os eventos ao backend. Até 20 candidatos são conferidos por execução; a busca não cobre necessariamente todo o catálogo porque os resultados são paginados.
 
-Dados salvos no PostgreSQL: nome, data, cidade, estado, fonte, link, status e horário da conferência. Identificadores estáveis evitam duplicatas. Eventos automáticos sem nova conferência em 48 horas deixam de aparecer; os eventos anteriormente cadastrados manualmente continuam com validade de sete dias. Uma falha da fonte não apaga o banco nem renova conferências antigas.
+Se houver bloqueio, CAPTCHA, erro de navegação ou instalação do navegador, a rotina informa uma falha ao backend. Não tenta resolver CAPTCHA nem contornar controles. Uma busca parcialmente concluída é descartada: não renova eventos antigos. O frontend mostra exatamente **Dados não atualizados**. O status e a última atualização bem-sucedida ficam no PostgreSQL, mesmo após reiniciar o backend. O mesmo aviso aparece se o status não puder ser consultado ou se a última atualização bem-sucedida tiver mais de 48 horas. Se o GitHub não conseguir comunicar a falha ao Render, o aviso por desatualização continua funcionando após esse prazo.
 
-## Como ativar na sua publicação existente
+Os registros continuam guardados, mas eventos automáticos deixam de aparecer como inscrição aberta após 48 horas sem conferência. Eventos manuais têm validade de sete dias. Um botão de inscrição não garante que existam vagas em todas as categorias: a pessoa deve confirmar no organizador.
 
-1. Envie os arquivos atualizados deste pacote ao GitHub, incluindo `.github/workflows/eventos.yml`. As pastas backend e frontend substituem as versões anteriores; mantenha as variáveis já existentes do Render e Netlify.
-2. No Render, entre no serviço **heraiasports → Environment** e adicione `TICKETSPORTS_SYNC_ENABLED` com valor `true`.
-3. Crie uma senha aleatória de pelo menos 32 caracteres para a sincronização. Pode gerar no terminal com `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`. No Render, salve como `EVENT_SYNC_TOKEN`. Não coloque essa senha em arquivos, frontend ou screenshots.
-4. No GitHub, abra **Settings → Secrets and variables → Actions → New repository secret**. Nome: `EVENT_SYNC_TOKEN`. Valor: exatamente a mesma senha do Render.
-5. Faça o deploy do Render com o comando de build já configurado: `npm ci --include=dev && npm run build --workspace backend && npm run db:setup --workspace backend`.
-6. No GitHub, abra **Actions → Atualizar agenda Ticket Sports → Run workflow** para testar a primeira atualização. O arquivo precisa estar no branch principal e Actions habilitado. Depois a execução fica agendada diariamente às 09:17 UTC (06:17 de Brasília). Agendamentos do GitHub podem sofrer atrasos; em repositórios públicos inativos por 60 dias podem ser desativados.
-7. Publique o frontend atualizado no Netlify. A API continua em `https://heraiasports.onrender.com/api`.
+## Ativar na publicação existente
 
-O backend também tenta atualizar ao iniciar e a cada 24 horas enquanto estiver em execução. Serviços que adormecem não executam temporizadores, por isso incluí a rotina do GitHub. Não foi criado nenhum agendamento na sua conta por este pacote: ele entra em funcionamento após a publicação e configuração acima.
+1. Envie os arquivos deste pacote ao repositório, substituindo a versão anterior. Inclua `.github/workflows/eventos.yml`, a pasta `scripts`, `package.json` e `package-lock.json`, além de backend e frontend.
+2. No Render, mantenha o `EVENT_SYNC_TOKEN` que você já cadastrou. Defina `TICKETSPORTS_SYNC_ENABLED=false`: o navegador agora é executado pelo GitHub, não pelo Render. Mantenha DATA_MODE, DATABASE_URL e CORS_ORIGIN existentes.
+3. Faça o deploy do Render. O build deve continuar como `npm ci --include=dev && npm run build --workspace backend && npm run db:setup --workspace backend`. Esse último comando cria a tabela de status. O start continua `npm run start --workspace backend`.
+4. Publique o frontend atualizado no Netlify para que o aviso apareça. Mantenha a URL da API atual.
+5. Depois que os dois deploys terminarem, no GitHub vá a **Actions → Atualizar agenda Ticket Sports → Run workflow**. O secret `EVENT_SYNC_TOKEN` existente deve continuar igual ao do Render; não precisa criar outro.
+6. A rotina instala o navegador, busca os eventos e informa o resultado. A primeira execução pode levar vários minutos. Se ficar vermelha, abra **Buscar eventos e atualizar o banco** para ver a mensagem. O resultado também é salvo no artefato `resultado-robo`.
 
-Status: https://heraiasports.onrender.com/api/integrations/ticketsports/status . `never` significa que não executou desde o início do servidor; `ok` mostra quantos candidatos foram encontrados e quantos eventos foram atualizados; `error` informa a falha. Esse resumo fica em memória e reinicia com o servidor; os eventos persistem no PostgreSQL.
+Agendamento diário: 06:17 no horário de Brasília (09:17 UTC). O arquivo deve estar no branch principal, com Actions habilitado. Agendamentos podem atrasar; repositórios públicos inativos por 60 dias podem ter agendamentos desativados. O pacote prepara a automação, mas não publica arquivos nem altera sua conta automaticamente.
 
-## Sobre a API gratuita
+Status: https://heraiasports.onrender.com/api/integrations/ticketsports/status
 
-A Ticket Sports anuncia API aberta, mas a documentação encontrada é voltada a organizadores e exige autenticação. Não foi confirmado acesso gratuito e anônimo ao catálogo completo. Esta implementação lê páginas públicas, sem chave de API, e não utiliza endpoints privados. Não é uma integração oficial nem garantia de disponibilidade: alterações no HTML, bloqueios ou mudanças de acesso podem exigir manutenção.
+A rota antiga `/sync` agora instrui a executar o workflow atualizado. O navegador envia um relatório para `/report`, protegido pelo token. O backend valida campos, IDs, palavras-chave e links oficiais; um relatório de sucesso só é salvo por completo, em transação.
 
-Fontes consultadas em 03/10/2026:
-- https://www.ticketsports.com.br/funcionalidades
-- https://www.postman.com/ticketsports/ticket-sports-api/overview
-- https://produto.ticketsports.com.br/Calendario/?termo=mulher
-- https://www.ticketsports.com.br/Evento/87764/Cadastro
+## Verificação e limitações
 
-Verificação: o parser foi exercitado com HTML real do catálogo e da página oficial de inscrição, além de testes de seleção, duplicidade, encerramento e autenticação. A sincronização completa precisa ser conferida no Render após ativação, onde o backend acessa a fonte.
+Builds do frontend e backend e testes de parser, autenticação, recebimento do relatório, duplicidade e preservação das conferências em caso de falha. O download do Chromium foi bloqueado/truncado no ambiente de desenvolvimento; por isso a navegação real desta versão ainda precisa ser testada na primeira execução do GitHub. Não foi comprovado que a Ticket Sports aceitará o navegador automatizado. Se bloquear, o aviso aparecerá quando o relatório da falha chegar ao Render.
+
+Não é uma API oficial nem uma integração autorizada da Ticket Sports. Páginas e políticas podem mudar, exigindo manutenção.
+
+Referência de instalação do navegador no GitHub: https://playwright.dev/docs/ci-intro

@@ -9,3 +9,4 @@
 .tone3{background:#43234e;color:#e8c66e}
 
 .checked-date{margin-top:14px}.event-links{margin-top:auto;padding-top:16px;display:flex;flex-direction:column;align-items:flex-start;gap:10px}.event-links .text-link{margin-top:0}.detail-grid .scope>.button{margin-top:25px}.fiction{max-width:105px;text-align:right;line-height:1.4}
+.update-notice{border:1px solid #d2a448;border-left:4px solid #d2a448;background:#fff8e8;color:#453411;padding:18px 22px;border-radius:12px;margin-bottom:24px}.update-notice p{margin:6px 0 0;font-size:.95rem;line-height:1.6}
