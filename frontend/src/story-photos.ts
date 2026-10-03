@@ -1,0 +1,6 @@
+export const storyPhotos:Record<string,{src:string;credit:string;source:string;license?:string;licenseUrl?:string;position:string}>={
+ 'Rebeca Andrade':{src:'/images/atletas/rebeca-andrade.webp',credit:'Ocoudis / Wikimedia Commons',source:'https://commons.wikimedia.org/wiki/File:Rebeca_Andrade_Paris_Olympics_2024.jpg',license:'CC0',licenseUrl:'https://creativecommons.org/publicdomain/zero/1.0/',position:'50% 28%'},
+ 'Marta':{src:'/images/atletas/marta.webp',credit:'Ricardo Stuckert / Presidência da República',source:'https://commons.wikimedia.org/wiki/File:Marta,_2023.jpg',license:'CC BY 2.0',licenseUrl:'https://creativecommons.org/licenses/by/2.0/',position:'50% 28%'},
+ 'Rafaela Silva':{src:'/images/atletas/rafaela-silva.webp',credit:'Tomaz Silva / Agência Brasil',source:'https://commons.wikimedia.org/wiki/File:Rafaela_Silva.jpg',license:'CC BY 3.0 BR',licenseUrl:'https://creativecommons.org/licenses/by/3.0/br/',position:'50% 30%'},
+ 'Tifanny Abreu':{src:'/images/atletas/tifanny-abreu.webp',credit:'Carol Fotografia / Osasco Voleibol Clube',source:'https://www.gazetaesportiva.com/mais-esportes/volei/osasco-anuncia-renovacao-com-tifanny-para-a-temporada-2026-27/',position:'44% 30%'}
+};

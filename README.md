@@ -1,3 +1,13 @@
+# Atualização V9: identidade visual de inspiração grega
+
+Novo visual da Heraia: terracota, areia e mármore; títulos em tipografia clássica; marca em arco; ilustração vetorial original de uma atleta; meandros decorativos; agenda editorial; fotos em arcos; cabeçalho e menu adaptados ao celular e tablet. É uma interpretação visual contemporânea, sem apresentar os elementos como reconstrução arqueológica.
+
+Envie o pacote ao GitHub e aguarde o deploy do Netlify. Não precisa alterar variáveis, banco ou agendamento do robô para esta atualização visual.
+
+# Atualização V8: fotos das atletas
+
+Rebeca Andrade, Marta, Rafaela Silva e Tifanny Abreu agora têm fotografias nos cards e nas páginas individuais, com créditos e fontes. Imagens locais otimizadas em WebP. Atualize os arquivos no GitHub e aguarde o deploy do Netlify; não é preciso reconfigurar o Render nem o robô para esta alteração.
+
 # Atualização V7: robô com navegador e aviso
 
 Leia [AGENDA-AUTOMATICA.md](AGENDA-AUTOMATICA.md) para ativar o robô com navegador Ticket Sports, configurar o Render e o agendamento diário no GitHub. Os passos específicos da V7 substituem as limitações de agenda exclusivamente manual descritas na versão anterior abaixo.

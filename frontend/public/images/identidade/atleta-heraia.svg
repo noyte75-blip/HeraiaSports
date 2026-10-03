@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 590" fill="none">
+ <defs><pattern id="key" width="48" height="30" patternUnits="userSpaceOnUse"><path d="M0 27h42V3H6v18h24V9H18v6" stroke="#e9d8b2" stroke-width="2"/></pattern><pattern id="lines" width="28" height="28" patternUnits="userSpaceOnUse"><path d="M14 0v28" stroke="#c6a778" stroke-opacity=".18"/></pattern></defs>
+ <path d="M24 567V235a216 216 0 01432 0v332" fill="#a44731"/>
+ <path d="M42 548V235a198 198 0 01396 0v313" stroke="#e9d8b2" stroke-width="1.5"/>
+ <circle cx="240" cy="242" r="154" fill="#cb7150"/>
+ <circle cx="240" cy="242" r="137" stroke="#efcb97" stroke-opacity=".5"/>
+ <path d="M54 446h372M54 479h372M54 512h372" stroke="#e9d8b2" stroke-opacity=".55"/>
+ <!-- Original stylized running figure; decorative artwork, not an archaeological reproduction. -->
+ <g fill="#f1dfb6">
+  <circle cx="279" cy="174" r="24"/>
+  <path d="M257 161c3-24 38-37 48-11-14-5-25-1-34 9z"/>
+  <path d="M257 197c-17 0-30 16-34 39l-15 54 65 26 12-48-19-20 4-24z"/>
+  <path d="M244 208l-56 26-45-26-10 16 53 35 68-26z"/>
+  <path d="M268 211l35 43 43-31 11 17-56 41-49-48z"/>
+  <path d="M213 276l-34 57 44 48 58-66z"/>
+  <path d="M184 326l-45 62-71 30 9 20 88-31 45-58z"/>
+  <path d="M272 307l-15 67 67 35 49 50 16-14-48-63-56-31 18-61z"/>
+  <path d="M73 418l-24 16c-7 5-7 12 2 13l43-13zM373 444l-3 34c0 7 8 9 12 2l18-30z"/>
+ </g>
+ <path d="M225 257l39 15m-43-4l39 15m-42-3l39 15m-60 30l25 31m-18-42l29 29" stroke="#a44731" stroke-width="3"/>
+ <g stroke="#f1dfb6" stroke-width="2" stroke-linecap="round">
+  <path d="M89 366c-15-44-10-89 17-129M391 366c15-44 10-89-17-129"/>
+  <path d="M89 349l-23-9m23-12l-24-13m27-10l-21-18m27-4l-15-22m22 7l-5-22M391 349l23-9m-23-12l24-13m-27-10l21-18m-27-4l15-22m-22 7l5-22"/>
+ </g>
+ <path d="M24 532h432v30H24z" fill="url(#key)"/>
+ <path d="M16 567h448v12H16z" fill="#332e26"/>
+ <text x="240" y="87" text-anchor="middle" fill="#f1dfb6" font-family="Georgia,serif" font-size="22" letter-spacing="8">ΗΡΑΙΑ</text>
+</svg>
