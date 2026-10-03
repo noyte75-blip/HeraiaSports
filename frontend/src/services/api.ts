@@ -1,4 +1,4 @@
-export interface Event {id:string;name:string;sport:string;description:string;date:string;location:string;city:string;state:string;category:string;registration_url:string;is_demo:boolean}
+export interface Event {id:string;name:string;sport:string;description:string;date:string;location:string;city:string;state:string;category:string;registration_url:string;is_demo:boolean;organizer?:string;source_name?:string;source_url?:string;participation_note?:string;start_time_confirmed?:boolean;registration_checked_at?:string|null;registration_deadline?:string|null;availability?:'open_checked'|'needs_review'|'closed'|'demo'}
 export interface Sport {id:string;name:string;category:string;description:string}
 export interface Story {id:string;name:string;sport:string;title:string;description:string;is_demo:boolean;source_name?:string;source_url?:string;source_checked_at?:string}
 const BASE=(import.meta.env.VITE_API_URL||'/api').replace(/\/$/,'');

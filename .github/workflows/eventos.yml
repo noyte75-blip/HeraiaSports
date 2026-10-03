@@ -1,0 +1,21 @@
+name: Atualizar agenda Ticket Sports
+on:
+  schedule:
+    - cron: '17 9 * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  atualizar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Atualizar eventos no backend
+        env:
+          EVENT_SYNC_TOKEN: ${{ secrets.EVENT_SYNC_TOKEN }}
+        run: |
+          test ${#EVENT_SYNC_TOKEN} -ge 32
+          curl --fail-with-body --silent --show-error --max-time 650 \
+            --retry 2 --retry-delay 20 --retry-all-errors \
+            -X POST 'https://heraiasports.onrender.com/api/integrations/ticketsports/sync' \
+            -H "Authorization: Bearer $EVENT_SYNC_TOKEN"

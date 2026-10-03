@@ -1,10 +1,14 @@
+# Atualização V5: agenda automática
+
+Leia [AGENDA-AUTOMATICA.md](AGENDA-AUTOMATICA.md) para ativar o coletor Ticket Sports, configurar o Render e o agendamento diário no GitHub. Os passos específicos da V5 substituem as limitações de agenda exclusivamente manual descritas na versão anterior abaixo.
+
 # Heraia
 
 **Projeto escolar fictício de Educação Física sobre desigualdade de gênero na sociedade.**
 
 O Heraia propõe incentivar a participação de meninas e mulheres no esporte por meio de educação desde a infância, divulgação de oportunidades e valorização de atletas e equipes. O nome se inspira nos Jogos Heraicos da Grécia Antiga.
 
-Os eventos e seus locais são fictícios e identificados na interface. As histórias apresentam atletas reais — Rebeca Andrade, Marta, Rafaela Silva e Tifanny Abreu — com referências oficiais visíveis; não há vínculo anunciado dessas atletas com o Heraia. Não há parceiros, patrocínios, inscrições reais ou resultados anunciados. Para testar o formulário, use informações fictícias.
+O calendário apresenta eventos reais com inscrições disponíveis na conferência de 02/10/2026, links externos e referências. As histórias apresentam atletas reais — Rebeca Andrade, Marta, Rafaela Silva e Tifanny Abreu — com referências oficiais visíveis; não há vínculo anunciado dessas atletas com o Heraia. O Heraia não anuncia parceiros nem patrocínios próprios; não organiza os eventos e não recebe inscrições ou pagamentos. Para testar o formulário, use informações fictícias.
 
 ## O que está implementado
 
@@ -37,7 +41,7 @@ flowchart TD
     G --> B
 ```
 
-O frontend e o backend podem ser implantados separadamente. O frontend centraliza as chamadas em `frontend/src/services/api.ts`. O backend utiliza `backend/src/database/store.ts` para acessar o PostgreSQL ou os dados locais da demonstração.
+O frontend e o backend podem ser implantados separadamente. O frontend centraliza as chamadas em `frontend/src/services/api.ts`. O backend utiliza `backend/src/database/store.ts` para acessar o PostgreSQL ou os conteúdo editorial local.
 
 ## Instalação e execução local
 
@@ -123,7 +127,7 @@ npm run db:migrate --workspace backend
 npm run db:seed --workspace backend
 ```
 
-O esquema cria `sports`, `events`, `athlete_stories` e `participation_requests`. A tabela de eventos acrescenta `state` e `is_demo` para os filtros e a identificação de ficção. O seed é repetível: preserva eventos e modalidades com IDs existentes e substitui apenas os três perfis fictícios originais. Perfis reais ou alterados são preservados. A migração inicial é repetível, mas não constitui um sistema de migrações versionadas para alterações futuras.
+O esquema cria `sports`, `events`, `athlete_stories` e `participation_requests`. A tabela de eventos acrescenta `state` e `is_demo` para os filtros e a identificação de ficção. O seed é repetível: preserva modalidades existentes, substitui os três perfis fictícios originais e remove apenas os seis eventos fictícios originais com IDs e nomes conhecidos. Os eventos editoriais novos só recebem uma atualização do seed se a data de conferência no pacote for mais recente que a existente. Perfis reais ou alterados são preservados. A migração inicial é repetível, mas não constitui um sistema de migrações versionadas para alterações futuras.
 
 Os campos `image_url` estão preparados no banco; a interface atual usa composição tipográfica e iniciais das atletas, sem fotografias ou imagens externas. Os eventos demonstrativos não têm links de inscrição.
 
@@ -132,7 +136,7 @@ Os campos `image_url` estão preparados no banco; a interface atual usa composi�
 | Método e caminho | Acesso | Função |
 | --- | --- | --- |
 | `GET /api/health` | Público | Estado, modo e persistência; testa o banco quando habilitado. |
-| `GET /api/events` | Público | Lista ordenada; aceita `sport`, `city`, `state`, `date`, `category`. |
+| `GET /api/events` | Público | Apenas eventos reais com inscrição conferida nos últimos sete dias e data futura; aceita `sport`, `city`, `state`, `date`, `category`. |
 | `GET /api/events/:id` | Público | Detalhes do evento. |
 | `GET /api/sports` | Público | Modalidades. |
 | `GET /api/sports/:id` | Público | Detalhes de modalidade. |
@@ -228,4 +232,37 @@ Fontes das histórias: biografia de Rebeca Andrade no COB; entrevista de Marta p
 
 ## Versão 3 — quatro atletas reais
 
-Inclui Tifanny Abreu, jogadora de vôlei e mulher trans, com trajetória apresentada a partir de reportagem da CBV sobre a final da Copa Brasil de 28/02/2026. A referência é exibida na página. Substitua os arquivos no mesmo repositório e mantenha os comandos de implantação da versão 2. O db:setup acrescenta o quarto perfil sem remover os anteriores. Eventos continuam fictícios.
+Inclui Tifanny Abreu, jogadora de vôlei e mulher trans, com trajetória apresentada a partir de reportagem da CBV sobre a final da Copa Brasil de 28/02/2026. A referência é exibida na página. Substitua os arquivos no mesmo repositório e mantenha os comandos de implantação da versão 2. O db:setup acrescenta o quarto perfil sem remover os anteriores. Na versão 4, o calendário passa a apresentar eventos reais com referências.
+
+
+## Versão 4 — inscrições reais
+
+O calendário agora contém quatro oportunidades conferidas em 02/10/2026 (horário de Brasília):
+
+| Evento | Data | Cidade | Fonte |
+| --- | --- | --- | --- |
+| Outubro Rosa — Aulão Solidário | 10/10/2026 | Suzano/SP | https://eusouumadiva.com.br/corridas/outubro-rosa-aulao-solidario |
+| Corre Menina — Corre Garota | 17/10/2026 | Rio de Janeiro/RJ | https://tickets.siuni.com.br/eventos/corremenina-corregarota |
+| 32ª Corrida Mulher-Maravilha São Paulo | 01/11/2026 | São Paulo/SP | https://www.yescom.com.br/corridamulhermaravilha/2026/saopaulo/index.html |
+| 10ª Corrida Eu Sou Uma Diva — Desafio HOPE Mogi Shopping | 06/12/2026 | Mogi das Cruzes/SP | https://eusouumadiva.com.br/corridas/corrida-eu-sou-uma-diva-desafio-hope-mogi-shopping |
+
+O aulão oferece inscrição gratuita; os demais remetem à página responsável para consultar valores e condições. Não são exibidos preços em cache, quantidades de vagas, patrocinadores dos eventos ou promessas de elegibilidade. Os regulamentos e requisitos devem ser consultados na fonte. Todos os links são sem códigos de afiliado.
+
+Não há integração automática com os sistemas dos organizadores. A verificação editorial não garante que vagas continuem disponíveis. O card informa a data da conferência, e a fonte é exibida na página de detalhes.
+
+Para evitar anúncios desatualizados, a API remove da lista pública eventos passados, inscrições marcadas como fechadas, prazos vencidos e conferências com mais de sete dias. Detalhes continuam acessíveis por link, mas sem botão de inscrição quando não houver conferência recente. Assim, sem nova verificação manual, os quatro anúncios deixam a lista em 09/10/2026, por volta de 21h33 no horário de Brasília. Não se deve renovar a data sem realmente verificar a página.
+
+Campos novos: `organizer`, `source_name`, `source_url`, `participation_note`, `start_time_confirmed`, `registration_status`, `registration_checked_at`, `registration_deadline`. Prazo de inscrição fica nulo quando não confirmado. Para a Mulher-Maravilha, horário e endereço de largada não foram confirmados e a interface remete à fonte, sem inventar informação. A data no banco usa meia-noite local apenas como representação do dia; o horário não é exibido quando `start_time_confirmed=false`.
+
+Atualização de eventos via `PUT /api/events/:id` exige token administrativo e o conjunto completo dos campos. Inscrição marcada como `open` para evento real exige fonte, link e timestamp de conferência. Esse registro é editorial, não é uma confirmação automática por API externa.
+
+### Aplicar ao site publicado
+
+1. Extraia este pacote e atualize o conteúdo do mesmo repositório GitHub, com `frontend` e `backend` na raiz. Preserve as variáveis configuradas nas hospedagens.
+2. No Render, mantenha Root Directory vazio, Build Command `npm ci --include=dev && npm run build --workspace backend && npm run db:setup --workspace backend` e Start Command `npm run start --workspace backend`.
+3. Faça deploy do backend. O db:setup adiciona os campos, remove somente os seis exemplos fictícios originais e importa os quatro eventos reais, preservando as atletas.
+4. Faça deploy do frontend na Netlify para que os links e as fontes apareçam.
+5. Na Netlify, o nome da variável é `VITE_API_URL` e seu valor é SOMENTE `https://heraiasports.onrender.com/api`.
+6. No Render, o nome é `CORS_ORIGIN` e o valor é SOMENTE `https://heraia.netlify.app`.
+
+Validação local: build dos dois projetos, testes de integração da API, resposta de preflight CORS e testes de expiração da conferência. Não houve acesso à conta Render/Netlify nem publicação desta versão pelo assistente, e a migração não foi executada contra o banco remoto nesta entrega.

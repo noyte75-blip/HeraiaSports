@@ -6,3 +6,12 @@ CREATE TABLE IF NOT EXISTS participation_requests (id uuid PRIMARY KEY, name tex
 ALTER TABLE athlete_stories ADD COLUMN IF NOT EXISTS source_name text NOT NULL DEFAULT '';
 ALTER TABLE athlete_stories ADD COLUMN IF NOT EXISTS source_url text NOT NULL DEFAULT '';
 ALTER TABLE athlete_stories ADD COLUMN IF NOT EXISTS source_checked_at text NOT NULL DEFAULT '';
+
+ALTER TABLE events ADD COLUMN IF NOT EXISTS organizer text NOT NULL DEFAULT '';
+ALTER TABLE events ADD COLUMN IF NOT EXISTS source_name text NOT NULL DEFAULT '';
+ALTER TABLE events ADD COLUMN IF NOT EXISTS source_url text NOT NULL DEFAULT '';
+ALTER TABLE events ADD COLUMN IF NOT EXISTS participation_note text NOT NULL DEFAULT '';
+ALTER TABLE events ADD COLUMN IF NOT EXISTS start_time_confirmed boolean NOT NULL DEFAULT true;
+ALTER TABLE events ADD COLUMN IF NOT EXISTS registration_status text NOT NULL DEFAULT 'unverified';
+ALTER TABLE events ADD COLUMN IF NOT EXISTS registration_checked_at timestamptz;
+ALTER TABLE events ADD COLUMN IF NOT EXISTS registration_deadline timestamptz;

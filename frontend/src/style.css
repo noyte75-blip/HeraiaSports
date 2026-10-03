@@ -7,3 +7,5 @@
 .source-box{margin-top:32px;padding:22px;background:#eee9f4;border-left:3px solid #9674b2}.source-box h2{font-size:1.3rem}.source-box p{font-size:.85rem}.source-box a{overflow-wrap:anywhere}
 
 .tone3{background:#43234e;color:#e8c66e}
+
+.checked-date{margin-top:14px}.event-links{margin-top:auto;padding-top:16px;display:flex;flex-direction:column;align-items:flex-start;gap:10px}.event-links .text-link{margin-top:0}.detail-grid .scope>.button{margin-top:25px}.fiction{max-width:105px;text-align:right;line-height:1.4}
