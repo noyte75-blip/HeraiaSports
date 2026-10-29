@@ -2,12 +2,15 @@ import {chromium} from 'playwright';
 import {keywords,parseCatalog,validDetail} from '../backend/src/ticketsports-parser.ts';
 import {writeFile,mkdir} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
+export function emptyCatalog(text){return /nenhum evento encontrado/i.test(text);}
 export function blockedText(text){return /just a moment|verifique que você é humano|verificando seu navegador|verify you are human|access denied|acesso negado|captcha/i.test(text);}
 async function load(page,url,selector){
  const response=await page.goto(url,{waitUntil:'domcontentloaded',timeout:45000});
  if(response&&[401,403,429].includes(response.status()))throw new Error('Página pública bloqueou o robô');
  if(blockedText(await page.locator('body').innerText()))throw new Error('Página pública exige verificação humana');
- await page.locator(selector).first().waitFor({state:'attached',timeout:20000});
+ if(selector==='.card-evento'){
+  await page.waitForFunction(()=>document.querySelector('.card-evento')||/nenhum evento encontrado/i.test(document.body.innerText),{},{timeout:20000});
+ }else await page.locator(selector).first().waitFor({state:'attached',timeout:20000});
  if(blockedText(await page.locator('body').innerText()))throw new Error('Página pública exige verificação humana');
  return page.content();
 }
